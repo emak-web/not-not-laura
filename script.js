@@ -16,13 +16,19 @@ const CONFIG = {
 
   // Step 2: Code output
   codeQuestion: {
-    languageLabel: "JavaScript",
-    code: `const a = [1,2,3];
-const b = a;
-b.push(4);
-console.log(a.length);`,
-    choices: ["3", "4", "undefined", "TypeError"],
-    correctIndex: 1,
+    languageLabel: "Python",
+    code: `class Laura:
+    def __init__(self, age):
+        self.age = age
+
+laura = Laura(18)
+
+if laura.age >= 18:
+    print("HB old Laura 🎉")
+else:
+    print("HB young Laura!")`,
+    choices: ["HB old Laura 🎉", "HB young Laura!", "AttributeError", "Nothing is printed"],
+    correctIndex: 0,
   },
 
   // Step 3: Ranking
@@ -40,32 +46,22 @@ console.log(a.length);`,
     topTwoMustBe: ["Egor", "Laura"],
   },
 
-  // Step 4: Bugs to trash
-  bugs: {
-    prompt: "Drag all REAL bugs into the trash.",
-    contextCode: `function sum(arr){
-  let s = 0;
-  for (let i = 0; i <= arr.length; i++){
-    s += arr[i];
-  }
-  return s;
-}`,
-    cards: [
-      { id: "offbyone", text: "`i <= arr.length` (off-by-one)", isBug: true },
-      { id: "arrread", text: "`arr[i]` becomes undefined at the end", isBug: true },
-      { id: "semicolons", text: "Missing semicolons", isBug: false },
-      { id: "name", text: "Function name is `sum` (too generic)", isBug: false },
-      { id: "var", text: "`let s = 0` should be `var s = 0`", isBug: false },
-    ],
+  // Step 4: Harry potter thing
+  harryPotterCaptcha: {
+    imageSrc: "assets/captcha/harry_potter.png",
+    rows: 3,
+    cols: 3,
+    // Indices of tiles that ARE Harry Potter
+    hpTiles: [0, 3, 4, 8], // <-- YOU EDIT THIS
   },
 
   // Step 5: Two truths and a lie
   truths: {
     prompt: "Two truths and a lie. Select the lie to continue.",
     statements: [
-      "Laura once fixed a bug in under 30 seconds.",
-      "Laura secretly prefers Vim over all other editors.",
-      "Laura has written code at 2 AM and called it 'productive'.",
+      "Laura knows that there are 52 weeks in a year.",
+      "Laura is always relaxed during exams and never overthinks anything.",
+      "It has been mathematically proven that it is impossible to outstudy Laura.",
     ],
     lieIndex: 1, // <-- YOU EDIT THIS (0,1,2)
   },
@@ -149,7 +145,7 @@ function render(){
   if (step === 1) return renderCaptcha();
   if (step === 2) return renderCode();
   if (step === 3) return renderRanking();
-  if (step === 4) return renderBugs();
+  if (step === 4) return renderHarryPotterCaptcha();
   if (step === 5) return renderTruths();
   return renderSuccess();
 }
@@ -380,121 +376,84 @@ function renderRanking(){
   });
 }
 
-function renderBugs(){
-  const noticeId = "bugNotice";
-  const poolId = "bugPool";
-  const trashId = "bugTrash";
+function renderHarryPotterCaptcha(){
+  const { rows, cols, imageSrc, hpTiles } = CONFIG.harryPotterCaptcha;
+  const total = rows * cols;
 
-  const cards = CONFIG.bugs.cards;
+  // reuse the same state variable
+  if (!window.hpSelected) window.hpSelected = new Set();
 
-  // Determine which cards are in trash/pool by state
-  const inTrash = new Set(bugTrash);
+  const tilesHtml = Array.from({ length: total }, (_, i) => {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
 
-  const poolCards = cards.filter(c => !inTrash.has(c.id));
-  const trashCards = cards.filter(c => inTrash.has(c.id));
+    const bgX = cols === 1 ? 0 : (c / (cols - 1)) * 100;
+    const bgY = rows === 1 ? 0 : (r / (rows - 1)) * 100;
+
+    const selectedClass = window.hpSelected.has(i) ? "selected" : "";
+    return `
+      <button class="tile ${selectedClass}"
+        data-idx="${i}"
+        style="
+          background-image: url('${imageSrc}');
+          background-size: ${cols * 100}% ${rows * 100}%;
+          background-position: ${bgX}% ${bgY}%;
+        "
+      ></button>
+    `;
+  }).join("");
 
   screenRoot.innerHTML = `
-    <h2>${escapeHtml(CONFIG.bugs.prompt)}</h2>
-    <p>Drag cards into the trash can. Infinite tries, no shame.</p>
-
-    <div class="dragArea">
-      <div class="panel">
-        <div class="trash">
-          <div class="badge">Context</div>
-        </div>
-        <div class="codeBox"><pre style="margin:0">${escapeHtml(CONFIG.bugs.contextCode)}</pre></div>
-      </div>
-
-      <div class="panel">
-        <div class="trash">
-          <div class="trashIcon" aria-hidden="true"></div>
-          <div><b>Trash</b> <span class="badge">(drop here)</span></div>
-        </div>
-
-        <div class="dropzone" id="${trashId}">
-          <div class="list">
-            ${trashCards.map(c => bugCardHtml(c)).join("")}
-          </div>
-        </div>
-
-        <div style="height:12px"></div>
-
-        <div class="badge">Bug candidates</div>
-        <div class="dropzone" id="${poolId}">
-          <div class="list">
-            ${poolCards.map(c => bugCardHtml(c)).join("")}
-          </div>
+    <div class="captchaWrap">
+      <div class="captchaHeader">
+        <div>
+          <h2>Select all images from Harry Potter</h2>
+          <p class="hint">Magic required. Muggles may retry.</p>
         </div>
       </div>
-    </div>
 
-    <div class="notice" id="${noticeId}"></div>
+      <div class="captchaGrid"
+        style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
+        ${tilesHtml}
+      </div>
 
-    <div class="actions">
-      <button class="btn ghost" id="bugsBack">Back</button>
-      <button class="btn ghost" id="bugsReset">Reset</button>
-      <button class="btn primary" id="bugsVerify">SUBMIT</button>
+      <div class="notice" id="hpNotice"></div>
+
+      <div class="actions">
+        <button class="btn ghost" id="hpReset">Reset</button>
+        <button class="btn primary" id="hpVerify">VERIFY</button>
+      </div>
     </div>
   `;
 
-  const notice = document.getElementById(noticeId);
-  const poolZone = document.getElementById(poolId);
-  const trashZone = document.getElementById(trashId);
+  const notice = document.getElementById("hpNotice");
 
-  enableDropzone(poolZone, "pool");
-  enableDropzone(trashZone, "trash");
-
-  // Make all bug cards draggable with payload
-  screenRoot.querySelectorAll(".draggable[data-bugid]").forEach(el => {
-    el.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", el.dataset.bugid);
-      e.dataTransfer.effectAllowed = "move";
+  screenRoot.querySelectorAll(".tile").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.idx);
+      if (window.hpSelected.has(idx)) window.hpSelected.delete(idx);
+      else window.hpSelected.add(idx);
+      notice.classList.remove("show");
+      renderHarryPotterCaptcha();
     });
   });
 
-  function enableDropzone(zoneEl, kind){
-    zoneEl.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      zoneEl.classList.add("over");
-      e.dataTransfer.dropEffect = "move";
-    });
-    zoneEl.addEventListener("dragleave", () => zoneEl.classList.remove("over"));
-    zoneEl.addEventListener("drop", (e) => {
-      e.preventDefault();
-      zoneEl.classList.remove("over");
-      hideNotice(notice);
-
-      const bugId = e.dataTransfer.getData("text/plain");
-      if (!bugId) return;
-
-      if (kind === "trash") bugTrash.add(bugId);
-      else bugTrash.delete(bugId);
-
-      renderBugs();
-    });
-  }
-
-  document.getElementById("bugsBack").addEventListener("click", () => {
-    step = 3;
-    render();
+  document.getElementById("hpReset").addEventListener("click", () => {
+    window.hpSelected.clear();
+    notice.classList.remove("show");
+    renderHarryPotterCaptcha();
   });
 
-  document.getElementById("bugsReset").addEventListener("click", () => {
-    bugTrash = new Set();
-    hideNotice(notice);
-    renderBugs();
-  });
-
-  document.getElementById("bugsVerify").addEventListener("click", async () => {
-    hideNotice(notice);
+  document.getElementById("hpVerify").addEventListener("click", async () => {
+    notice.classList.remove("show");
     await fakeCheck();
 
-    const bugIds = new Set(cards.filter(c => c.isBug).map(c => c.id));
-    const sameSize = bugTrash.size === bugIds.size;
-    const allMatch = sameSize && [...bugTrash].every(id => bugIds.has(id));
+    const correct = new Set(hpTiles);
+    const sameSize = window.hpSelected.size === correct.size;
+    const ok = sameSize && [...window.hpSelected].every(x => correct.has(x));
 
-    if (!allMatch){
-      showNotice(notice, "Some bugs survived. Try again.");
+    if (!ok){
+      showNotice(notice, "That doesn’t look very magical. Try again.");
       return;
     }
 
