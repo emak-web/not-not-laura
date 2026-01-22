@@ -71,7 +71,7 @@ else:
     title: "Verification complete",
     // Leave as placeholder; you’ll fill in later:
     placeholderText:
-      "TODO: Put your birthday message here.\n\nIdeas:\n- A sweet message\n- An inside joke\n- A link to a gift\n- A 'press for confetti' button 😄",
+      "Happy birthday Laura! 🎉\nI wish you all the best for this new period of your life, be creative, explore and, of course, never give up.\nIf you can achieve 45 predicted in the IB I’m sure you will be able to achieve anything that you set your mind to, sky is the limit… well, no, sky is of course not the limit, you are the one defining the limit!\nEgor ❤️\n(Press “More Confetti”)",
   },
 };
 
