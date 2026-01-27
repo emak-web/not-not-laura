@@ -470,3 +470,19 @@ p{ margin:0 0 14px; color: var(--muted); line-height:1.45; }
   .progress-track{ width: 140px; }
 }
 
+/* Visible grid lines for captcha tiles */
+.captchaGrid{
+  background: #fff;
+  gap: 2px;                 /* grid line thickness */
+  padding: 2px;             /* outer border spacing */
+}
+
+.tile{
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* subtle grid line color */
+.captchaGrid{
+  background: #e5e7eb;
+}
